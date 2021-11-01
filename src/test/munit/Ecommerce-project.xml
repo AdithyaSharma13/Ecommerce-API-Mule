@@ -278,6 +278,30 @@ assert_expression_payload::main({payload: payload, attributes: attributes, vars:
 			</munit-tools:assert>
 		</munit:validation>
 	</munit:test>
+	<munit:test name="Build-IntegrationFlow-test-main-flow" doc:id="9df1f971-4c50-459c-b9ac-f5cc085aea31" >
+		<munit:behavior >
+			<munit:set-event doc:name="Set Input" doc:id="8ab1f1e9-389c-46e3-9b83-822dac3d478e" >
+				<munit:payload value="#[readUrl('classpath://BuildIntegrationFlowtestmainflow\set-event_payload.dwl')]" />
+			</munit:set-event>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="Flow-ref to Build-IntegrationFlow" doc:id="6a5c41f3-cfce-4264-ac6a-80640fa96e6f" name="Build-IntegrationFlow"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert doc:name="Assert payload" doc:id="7bf357fe-3e25-439a-a183-19a52faa1ecf" message="The payload does not match">
+				<munit-tools:that ><![CDATA[#[%dw 2.0
+import BuildIntegrationFlowtestmainflow::assert_expression_payload
+---
+assert_expression_payload::main({payload: payload, attributes: attributes, vars: vars})]]]></munit-tools:that>
+			</munit-tools:assert>
+			<munit-tools:assert doc:name="Assert variables" doc:id="030d08aa-6526-4784-a64b-469eec7d76d9" message="The variables do not match">
+				<munit-tools:that ><![CDATA[#[%dw 2.0
+import BuildIntegrationFlowtestmainflow::assert_expression_variables
+---
+assert_expression_variables::main({payload: payload, attributes: attributes, vars: vars})]]]></munit-tools:that>
+			</munit-tools:assert>
+		</munit:validation>
+	</munit:test>
 
 
 </mule>
