@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>com.mycompany</groupId>
-	<artifactId>demo-sf</artifactId>
+	<artifactId>Ecommerce-project</artifactId>
 	<version>1.0.0-SNAPSHOT</version>
 	<packaging>mule-application</packaging>
 
@@ -31,6 +31,19 @@
 				<version>${mule.maven.plugin.version}</version>
 				<extensions>true</extensions>
 				<configuration>
+					<cloudHubDeployment>
+						<uri>https://anypoint.mulesoft.com</uri>
+						<muleVersion>4.4.0</muleVersion>
+						<!-- Deploy User Parameter -->
+						<username>any_sept1</username>
+						<password>Any_sept1</password>
+						<!-- Environment Parameter -->
+						<environment>Sandbox</environment>
+						<applicationName>Ecommerce-project-api</applicationName>
+						<businessGroup>apisero</businessGroup>
+						<workerType>Micro</workerType>
+						<objectStoreV2>true</objectStoreV2>
+					</cloudHubDeployment>				
 					<sharedLibraries>
 						<sharedLibrary>
 							<groupId>mysql</groupId>

@@ -14,7 +14,7 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
 	<flow name="Build-IntegrationFlow" doc:id="1cd703cd-4f7e-470c-9d02-abbc09bdbe90" >
 		<scheduler doc:name="Scheduler" doc:id="edc4bf55-61f1-4c11-9c59-b952fba7e5f5" >
 			<scheduling-strategy >
-				<fixed-frequency />
+				<fixed-frequency frequency="1" timeUnit="MINUTES"/>
 			</scheduling-strategy>
 		</scheduler>
 		<logger level="INFO" doc:name="Logger" doc:id="a9426079-f2d0-4259-90c4-60feb5214e7d" message="Build integration flow has started"/>

@@ -84,7 +84,7 @@
 			</otherwise>
 		</choice>
 	</flow>
-	<munit:test name="inventory-data-to-sql-flow-test" doc:id="81679c3b-74ac-4803-9a3d-66ab73e4ef8e" >
+	<munit:test name="inventory-data-to-sql-flow-test-success" doc:id="81679c3b-74ac-4803-9a3d-66ab73e4ef8e" >
 		<munit:behavior >
 			<munit-tools:mock-when doc:name="Mock Select" doc:id="62887b3a-cbfc-43c1-bed4-3b87df68cc5b" processor="db:select">
 				<munit-tools:with-attributes >
@@ -118,6 +118,161 @@
 			<munit-tools:assert doc:name="Assert payload" doc:id="84fe0435-63e9-499e-b04b-133dcf2a4368" message="The payload does not match">
 				<munit-tools:that ><![CDATA[#[%dw 2.0
 import inventorydatatosqlflowtest::assert_expression_payload
+---
+assert_expression_payload::main({payload: payload, attributes: attributes, vars: vars})]]]></munit-tools:that>
+			</munit-tools:assert>
+		</munit:validation>
+	</munit:test>
+	<flow name="mock-salesforce:query" doc:id="524847b5-830b-45eb-89ed-8861cd86d0aa" >
+		<try doc:name="Try" doc:id="e81aa430-852e-476b-ac48-0d70fd9d6d60" >
+			<munit-tools:retrieve doc:name="Retrieve" doc:id="e54bdad1-78f7-49f8-87dc-b23a7af70bf0" key="Mock Query"/>
+			<error-handler >
+				<on-error-continue enableNotifications="false" logException="false" doc:name="On Error Continue" doc:id="8c97e601-c8a4-46c0-9c2c-4107ba234acc" type="ANY">
+					<set-payload value="#[1]" doc:name="Set Payload" doc:id="38942072-1438-4af2-9380-fcf96dcc99ce" />
+				</on-error-continue>
+			</error-handler>
+		</try>
+		<munit-tools:store doc:name="Store" doc:id="a3c4b0cf-f023-4ec0-bf27-73e6ad3a617a" key="Mock Query">
+			<munit-tools:value ><![CDATA[#[payload + 1]]]></munit-tools:value>
+		</munit-tools:store>
+		<choice doc:name="Choice" doc:id="4b6d45b3-8182-4cad-8c76-022c0de5c668" >
+			<when expression="#[payload == 1]">
+				<munit:set-event doc:name="Set Event" doc:id="b10b18b5-7da9-47c3-b8b4-c85566e6c10a" >
+					<munit:payload value="#[output application/java --- readUrl('classpath://accountdatatosfflowtestsuccess\mock_payload1.dwl')]" encoding="UTF-8" mediaType="application/java" />
+					<munit:variables >
+						<munit:variable key="accountInfo" value="#[output application/java --- readUrl('classpath://accountdatatosfflowtestsuccess\mock_variable_.dwl')]" encoding="UTF-8" mediaType="application/java" />
+						<munit:variable key="rootMessage" value="#[readUrl('classpath://accountdatatosfflowtestsuccess\mock_variable_1.dwl')]" />
+						<munit:variable key="counter" value="#[readUrl('classpath://accountdatatosfflowtestsuccess\mock_variable_2.dwl')]" />
+					</munit:variables>
+				</munit:set-event>
+			</when>
+			<when expression="#[payload == 2]">
+				<munit:set-event doc:name="Set Event" doc:id="3481bcf9-84b1-4d59-9efa-65dfd58cc6a0" >
+					<munit:payload value="#[output application/java --- readUrl('classpath://accountdatatosfflowtestsuccess\mock_payload2.dwl')]" encoding="UTF-8" mediaType="application/java" />
+					<munit:variables >
+						<munit:variable key="accountInfo" value="#[output application/java --- readUrl('classpath://accountdatatosfflowtestsuccess\mock_variable_3.dwl')]" encoding="UTF-8" mediaType="application/java" />
+						<munit:variable key="rootMessage" value="#[readUrl('classpath://accountdatatosfflowtestsuccess\mock_variable_4.dwl')]" />
+						<munit:variable key="counter" value="#[readUrl('classpath://accountdatatosfflowtestsuccess\mock_variable_5.dwl')]" />
+					</munit:variables>
+				</munit:set-event>
+			</when>
+			<when expression="#[payload == 3]">
+				<munit:set-event doc:name="Set Event" doc:id="f16b52d5-6326-4335-b2f3-04687d2a623f" >
+					<munit:payload value="#[output application/java --- readUrl('classpath://accountdatatosfflowtestsuccess\mock_payload3.dwl')]" encoding="UTF-8" mediaType="application/java" />
+					<munit:variables >
+						<munit:variable key="accountInfo" value="#[output application/java --- readUrl('classpath://accountdatatosfflowtestsuccess\mock_variable_6.dwl')]" encoding="UTF-8" mediaType="application/java" />
+						<munit:variable key="rootMessage" value="#[readUrl('classpath://accountdatatosfflowtestsuccess\mock_variable_7.dwl')]" />
+						<munit:variable key="counter" value="#[readUrl('classpath://accountdatatosfflowtestsuccess\mock_variable_8.dwl')]" />
+					</munit:variables>
+				</munit:set-event>
+			</when>
+			<when expression="#[payload == 4]">
+				<munit:set-event doc:name="Set Event" doc:id="bcf0a5c0-7c2c-4567-8adf-b57c609f92fa" >
+					<munit:payload value="#[output application/java --- readUrl('classpath://accountdatatosfflowtestsuccess\mock_payload4.dwl')]" encoding="UTF-8" mediaType="application/java" />
+					<munit:variables >
+						<munit:variable key="accountInfo" value="#[output application/java --- readUrl('classpath://accountdatatosfflowtestsuccess\mock_variable_9.dwl')]" encoding="UTF-8" mediaType="application/java" />
+						<munit:variable key="rootMessage" value="#[readUrl('classpath://accountdatatosfflowtestsuccess\mock_variable_10.dwl')]" />
+						<munit:variable key="counter" value="#[readUrl('classpath://accountdatatosfflowtestsuccess\mock_variable_11.dwl')]" />
+					</munit:variables>
+				</munit:set-event>
+			</when>
+			<otherwise >
+				<munit-tools:fail doc:name="Fail" doc:id="9ae5374e-af71-40f1-aa84-b5ae17530cd5" message="There are no more events to mock"/>
+			</otherwise>
+		</choice>
+	</flow>
+	<flow name="mock-salesforce:create" doc:id="17fa3ae2-6616-43e7-ba32-7a146252b1b1" >
+		<try doc:name="Try" doc:id="2dcd881e-d953-490a-93ef-42efc5931813" >
+			<munit-tools:retrieve doc:name="Retrieve" doc:id="0d995793-fcc8-4f43-be54-082716be40a4" key="Mock Create"/>
+			<error-handler >
+				<on-error-continue enableNotifications="false" logException="false" doc:name="On Error Continue" doc:id="25773950-d5cd-4b74-91c0-5c75fd646970" type="ANY">
+					<set-payload value="#[1]" doc:name="Set Payload" doc:id="53f4a415-2026-4c02-af19-b499904aac0d" />
+				</on-error-continue>
+			</error-handler>
+		</try>
+		<munit-tools:store doc:name="Store" doc:id="8fa35a6f-07e3-444f-bfd2-b685063c6904" key="Mock Create">
+			<munit-tools:value ><![CDATA[#[payload + 1]]]></munit-tools:value>
+		</munit-tools:store>
+		<choice doc:name="Choice" doc:id="36ac7af3-60a3-43f0-930f-52d33efb6191" >
+			<when expression="#[payload == 1]">
+				<munit:set-event doc:name="Set Event" doc:id="9c695baf-3d73-4962-ba8c-33984cd7a7a7" >
+					<munit:payload value="#[output application/java --- readUrl('classpath://accountdatatosfflowtestsuccess\mock_payload5.dwl')]" encoding="UTF-8" mediaType="application/java" />
+					<munit:variables >
+						<munit:variable key="accountInfo" value="#[output application/java --- readUrl('classpath://accountdatatosfflowtestsuccess\mock_variable_12.dwl')]" encoding="UTF-8" mediaType="application/java" />
+						<munit:variable key="rootMessage" value="#[readUrl('classpath://accountdatatosfflowtestsuccess\mock_variable_13.dwl')]" />
+						<munit:variable key="counter" value="#[readUrl('classpath://accountdatatosfflowtestsuccess\mock_variable_14.dwl')]" />
+					</munit:variables>
+				</munit:set-event>
+			</when>
+			<when expression="#[payload == 2]">
+				<munit:set-event doc:name="Set Event" doc:id="72538641-b2e4-45d3-9345-d9954f4c69ef" >
+					<munit:payload value="#[output application/java --- readUrl('classpath://accountdatatosfflowtestsuccess\mock_payload6.dwl')]" encoding="UTF-8" mediaType="application/java" />
+					<munit:variables >
+						<munit:variable key="accountInfo" value="#[output application/java --- readUrl('classpath://accountdatatosfflowtestsuccess\mock_variable_15.dwl')]" encoding="UTF-8" mediaType="application/java" />
+						<munit:variable key="rootMessage" value="#[readUrl('classpath://accountdatatosfflowtestsuccess\mock_variable_16.dwl')]" />
+						<munit:variable key="counter" value="#[readUrl('classpath://accountdatatosfflowtestsuccess\mock_variable_17.dwl')]" />
+					</munit:variables>
+				</munit:set-event>
+			</when>
+			<when expression="#[payload == 3]">
+				<munit:set-event doc:name="Set Event" doc:id="abfb609f-2193-4995-aad2-0b185a84c66f" >
+					<munit:payload value="#[output application/java --- readUrl('classpath://accountdatatosfflowtestsuccess\mock_payload7.dwl')]" encoding="UTF-8" mediaType="application/java" />
+					<munit:variables >
+						<munit:variable key="accountInfo" value="#[output application/java --- readUrl('classpath://accountdatatosfflowtestsuccess\mock_variable_18.dwl')]" encoding="UTF-8" mediaType="application/java" />
+						<munit:variable key="rootMessage" value="#[readUrl('classpath://accountdatatosfflowtestsuccess\mock_variable_19.dwl')]" />
+						<munit:variable key="counter" value="#[readUrl('classpath://accountdatatosfflowtestsuccess\mock_variable_20.dwl')]" />
+					</munit:variables>
+				</munit:set-event>
+			</when>
+			<when expression="#[payload == 4]">
+				<munit:set-event doc:name="Set Event" doc:id="4db9653c-c397-4965-ad0a-f304009e1777" >
+					<munit:payload value="#[output application/java --- readUrl('classpath://accountdatatosfflowtestsuccess\mock_payload8.dwl')]" encoding="UTF-8" mediaType="application/java" />
+					<munit:variables >
+						<munit:variable key="accountInfo" value="#[output application/java --- readUrl('classpath://accountdatatosfflowtestsuccess\mock_variable_21.dwl')]" encoding="UTF-8" mediaType="application/java" />
+						<munit:variable key="rootMessage" value="#[readUrl('classpath://accountdatatosfflowtestsuccess\mock_variable_22.dwl')]" />
+						<munit:variable key="counter" value="#[readUrl('classpath://accountdatatosfflowtestsuccess\mock_variable_23.dwl')]" />
+					</munit:variables>
+				</munit:set-event>
+			</when>
+			<otherwise >
+				<munit-tools:fail doc:name="Fail" doc:id="f5cf6353-4ba7-4767-9345-dfaa2c815a85" message="There are no more events to mock"/>
+			</otherwise>
+		</choice>
+	</flow>
+	<munit:test name="account-data-to-sf-flow-test-success" doc:id="76930e2a-969f-4602-95ea-7c979dd4588b" >
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock Get object Account" doc:id="aaaa2104-2198-4d17-975b-26cc23dd2304" processor="s3:get-object">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="34d97f86-7ebd-47fa-ad9c-af52d820fe15" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:payload value="#[output text/plain --- readUrl('classpath://accountdatatosfflowtestsuccess\mock_payload.dwl')]" mediaType="text/plain" encoding="UTF-8" />
+					<munit-tools:attributes value="#[readUrl('classpath://accountdatatosfflowtestsuccess\mock_attributes.dwl')]" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="Mock Query" doc:id="4bc6d27e-3d14-45c0-9739-ffaabf4755fa" processor="salesforce:query">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="1a865042-4b94-4a75-b595-16c98886ee39" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-call flow="mock-salesforce:query" />
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="Mock Create" doc:id="e8b52d38-0bbe-46f6-ba07-88cc189f53d9" processor="salesforce:create">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="ca6e6b96-5c86-4edc-aaa0-6e8cef195f8d" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-call flow="mock-salesforce:create" />
+			</munit-tools:mock-when>
+			<munit:set-event doc:name="Set Input" doc:id="c7c7e904-34a5-4b9a-ab4f-f95aeb8fb727" >
+				<munit:payload value="#[readUrl('classpath://accountdatatosfflowtestsuccess\set-event_payload.dwl')]" />
+			</munit:set-event>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="Flow-ref to account-data-to-sf-flow" doc:id="26eb4c0c-896a-4547-891b-e6a7e208f964" name="account-data-to-sf-flow"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert doc:name="Assert payload" doc:id="12b65994-c7ea-44ce-993a-0e876d2eede7" message="The payload does not match">
+				<munit-tools:that ><![CDATA[#[%dw 2.0
+import accountdatatosfflowtestsuccess::assert_expression_payload
 ---
 assert_expression_payload::main({payload: payload, attributes: attributes, vars: vars})]]]></munit-tools:that>
 			</munit-tools:assert>
