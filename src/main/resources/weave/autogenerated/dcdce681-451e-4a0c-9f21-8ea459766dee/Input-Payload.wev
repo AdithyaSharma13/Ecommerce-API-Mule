@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_dcdce681_451e_4a0c_9f21_8ea459766dee_Input_Payload = Null
+

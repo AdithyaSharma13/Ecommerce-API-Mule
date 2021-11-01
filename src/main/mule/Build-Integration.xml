@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:s3="http://www.mulesoft.org/schema/mule/s3" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/s3 http://www.mulesoft.org/schema/mule/s3/current/mule-s3.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<s3:config name="Amazon_S3_Configuration" doc:name="Amazon S3 Configuration" doc:id="efe09235-1394-4f81-9e4f-1f216fdf77b9" >
+		<s3:basic-connection accessKey="AKIAXO7OTVFHCAWQUUMQ" secretKey="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" region="US_WEST_1"/>
+	</s3:config>
+	<flow name="Build-IntegrationFlow" doc:id="1cd703cd-4f7e-470c-9d02-abbc09bdbe90" >
+		<scheduler doc:name="Scheduler" doc:id="edc4bf55-61f1-4c11-9c59-b952fba7e5f5" >
+			<scheduling-strategy >
+				<fixed-frequency />
+			</scheduling-strategy>
+		</scheduler>
+		<logger level="INFO" doc:name="Logger" doc:id="a9426079-f2d0-4259-90c4-60feb5214e7d" message="Build integration flow has started"/>
+		<scatter-gather doc:name="Scatter-Gather" doc:id="ac2bdcbd-dd32-4295-8378-fe20262f82d8" >
+			<route >
+				<flow-ref doc:name="Flow Reference" doc:id="45dd5388-6472-4d21-af18-3698d73c885c" name="account-data-to-sf-flow"/>
+			</route>
+			<route >
+				<flow-ref doc:name="Flow Reference" doc:id="e69dafa8-fa0b-4257-bcee-e74ffe2a86b0" name="inventory-data-to-sql-flow" />
+			</route>
+		</scatter-gather>
+	</flow>
+	<flow name="account-data-to-sf-flow" doc:id="3072a347-7ed8-4fb8-b6cd-557082531a60" >
+		<logger level="INFO" doc:name="Logger" doc:id="8f859b84-05bf-4083-88b5-3b3e6eebf3dc" message="account-data-to-sf-flow has started" />
+		<s3:get-object doc:name="Get object Account" doc:id="34d97f86-7ebd-47fa-ad9c-af52d820fe15" config-ref="Amazon_S3_Configuration" bucketName="g13accounts" key="Accounts/Account2.txt" />
+		<set-payload value="#[payload]" doc:name="Set Payload" doc:id="8604fcd3-c24b-4561-a1a2-f635929ae462" mimeType="application/flatfile; schemapath=AccDetailsCopyfile.ffd"/>
+		<ee:transform doc:name="payload-java" doc:id="d5c944d4-e9b4-453a-9870-0a5b55e4054b" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload map ( payload01 , indexOfPayload01 ) -> {
+	LastName: payload01.NAME,
+	MailingCity: payload01.CITY,
+	Phone: payload01.PHONENUMBER,
+	Email: payload01.EMAIL,
+	account_id__c: payload01.ACCOUNTID
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<foreach doc:name="For Each" doc:id="4c016207-a93f-4505-920a-52127a45b4f3" >
+			<set-variable value="#[payload]" doc:name="accountInfo" doc:id="c5586330-33d1-4598-9e09-a43cc2c50706" variableName="accountInfo"/>
+			<try doc:name="Try" doc:id="96203ef9-c59f-43ab-b766-7957af1fa28e" >
+				<salesforce:query doc:name="Query" doc:id="1a865042-4b94-4a75-b595-16c98886ee39" config-ref="Salesforce_Config">
+				<salesforce:salesforce-query><![CDATA[Select LastName,Phone,Email,MailingCity,account_id__c from Contact where account_id__c=':account_id__c']]></salesforce:salesforce-query>
+				<salesforce:parameters><![CDATA[#[output application/java
+---
+{
+	account_id__c : vars.accountInfo.account_id__c
+}]]]></salesforce:parameters>
+			</salesforce:query>
+				<error-handler >
+					<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="8fd25625-8f9d-4200-9ce1-efea2581a4bb" type="SALESFORCE:CONNECTIVITY, SALESFORCE:TIMEOUT">
+						<logger level="INFO" doc:name="Logger" doc:id="2b8399d2-fd8d-445d-ba35-eb7d356dc0bf" message="Failing to make a connection to salesforce to query the data"/>
+					</on-error-propagate>
+				</error-handler>
+			</try>
+			<choice doc:name="Choice" doc:id="aa8cb7fa-2c29-41ae-8c7e-8a3147352bdb" >
+				<when expression="#[isEmpty(payload)]">
+					<ee:transform doc:name="payload-java" doc:id="33ddd3a2-af9f-4c34-ad85-41219be3318a">
+				<ee:message>
+					<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+[{
+	LastName: vars.accountInfo.LastName as String,
+	MailingCity: vars.accountInfo.MailingCity as String,
+	Phone: vars.accountInfo.Phone as String,
+	Email: vars.accountInfo.Email as String,
+	account_id__c: vars.accountInfo.account_id__c as String
+}]]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+					<try doc:name="Try" doc:id="1e301749-bc06-4e97-9047-a97e637843bc" >
+						<salesforce:create doc:name="Create" doc:id="ca6e6b96-5c86-4edc-aaa0-6e8cef195f8d" type="Contact" config-ref="Salesforce_Config" />
+						<error-handler >
+							<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="2dc34db1-5a2b-4400-9e77-207e4f387a78" type="SALESFORCE:CONNECTIVITY, SALESFORCE:RETRY_EXHAUSTED, SALESFORCE:TIMEOUT">
+								<logger level="INFO" doc:name="Logger" doc:id="ee3462ec-c713-4508-81d5-b2cc93d5ea97" message="Failing to make a connection to salesforce to create data"/>
+							</on-error-continue>
+						</error-handler>
+					</try>
+				</when>
+				<otherwise >
+					<logger level="INFO" doc:name="Logger" doc:id="e4d837cc-3e05-4764-bc40-485782986428" message="Data already present in salesforce" />
+				</otherwise>
+			</choice>
+		</foreach>
+		<ee:transform doc:name="payload response-json" doc:id="44e8655e-4104-4c90-a55c-73bcefccb03a" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="bcf7b8a6-5096-4b1f-b674-9ad5512dc893" message="account-data-to-sf-flow completed"/>
+		<error-handler>
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="e8310819-f2db-405c-9e9f-f02b3fdff4e2" type="ANY">
+				<ee:transform doc:name="Transform Message" doc:id="b1f6280a-f95d-4ff0-9b87-8227193cb0f3" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+error.description]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-continue>
+		</error-handler>
+	</flow>
+	<flow name="inventory-data-to-sql-flow" doc:id="a55ebd56-6894-418e-ad32-a40f9af0fef9" >
+		<logger level="INFO" doc:name="Logger" doc:id="f88ffc75-b7c6-44ca-bef4-013a0c4b8115" message="inventory-data-to-sql-flow has started"/>
+		<s3:get-object doc:name="Get object" doc:id="2a3d423e-9b99-4d07-a2e2-82b737eb0ffb" config-ref="Amazon_S3_Configuration" bucketName="g13accounts" key="Inventory/Inventory02.csv"/>
+		<set-payload value="#[payload]" doc:name="Set Payload" doc:id="c4557f27-32aa-4683-adc0-7f50dd3ae526" mimeType="application/csv"/>
+		<ee:transform doc:name="payload-json" doc:id="4bc03b63-3b66-495c-8213-9b7c92a00072" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<foreach doc:name="For Each" doc:id="669d94b4-0432-4d54-9387-a515032f2394" >
+			<set-variable value="#[payload]" doc:name="inventoryInfo" doc:id="2bf28b52-3b37-42a6-8685-028731ad1928" variableName="inventoryInfo"/>
+			<try doc:name="Try" doc:id="f356019d-1d60-4999-a706-dec12291b1ff" >
+				<db:select doc:name="Select" doc:id="9fb4242a-a3af-4800-9536-f7c39129a3ef" config-ref="Database_Config">
+				<db:sql><![CDATA[select * from invtable where prodId=:prodId]]></db:sql>
+				<db:input-parameters><![CDATA[#[{
+	prodId: vars.inventoryInfo.Id
+}]]]></db:input-parameters>
+			</db:select>
+				<error-handler >
+					<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="c9b51040-43e3-4f1d-9dd0-9dba4b495dbc" type="DB:CONNECTIVITY">
+						<logger level="INFO" doc:name="Logger" doc:id="1786dc2d-da9f-427a-9a13-7752d7be423a" message="Failing to make a connection to database to query the data"/>
+					</on-error-propagate>
+				</error-handler>
+			</try>
+			<choice doc:name="Choice" doc:id="52034b63-b133-4cf3-b969-be2b5bc92c43" >
+				<when expression="#[isEmpty(payload)]">
+					<try doc:name="Try" doc:id="3af97761-820b-4143-96ad-7cdf93c840c0" >
+						<db:insert doc:name="Insert" doc:id="77cd64bc-9c09-4791-8dd5-72742fbabcf1" config-ref="Database_Config">
+			<db:sql><![CDATA[INSERT INTO invtable(prodId,prodName,prodSupplier,prodQty,prodPrice)
+VALUES (:prodId, :prodName, :prodSupplier, :prodQty, :prodPrice)]]></db:sql>
+			<db:input-parameters><![CDATA[#[{
+	prodId:vars.inventoryInfo.Id,
+	prodName:vars.inventoryInfo.prodName,
+	prodSupplier:vars.inventoryInfo.prodSupplier,
+	prodQty:vars.inventoryInfo.prodQty,
+	prodPrice:vars.inventoryInfo.prodPrice	
+}]]]></db:input-parameters>
+		</db:insert>
+						<error-handler >
+							<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="ceb59be4-b0e6-48a7-b722-6932da107b54" type="DB:CONNECTIVITY">
+								<logger level="INFO" doc:name="Logger" doc:id="ec60f8cd-0991-494a-a04f-9c28caa02cab" message="Failing to make a connection to database to create the data"/>
+							</on-error-propagate>
+						</error-handler>
+					</try>
+				</when>
+				<otherwise >
+					<logger level="INFO" doc:name="Logger" doc:id="5439ad7b-a6cd-46a4-a5a1-098e398748d4" message="data already present"/>
+				</otherwise>
+			</choice>
+		</foreach>
+		<logger level="INFO" doc:name="Logger" doc:id="1d5d35f6-e5cf-48fc-abfc-aa435469c85e" message="inventory-data-to-sql-flow completed"/>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="b3a2acd5-01cb-4be8-add5-d37a24deb56f" type="ANY">
+				<ee:transform doc:name="Transform Message" doc:id="8076880b-9fa5-467a-b691-1c8e908edf64" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+error.description]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-continue>
+		</error-handler>
+	</flow>
+</mule>

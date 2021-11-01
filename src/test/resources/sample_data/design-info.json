@@ -1,0 +1,16 @@
+{
+  "sampleData": {
+    "9cea0314-72fe-4854-891b-623057b81889": {
+      "payload": "sample_data/list_copybook.flatfile"
+    },
+    "59745b99-3ab4-4e4d-a502-c515d57eb1af": {
+      "payload": "sample_data/defaultbinarytype.flatfile"
+    },
+    "4ea5198f-ee43-464a-bbd2-73f260680ee7": {
+      "payload": "sample_data/bulkoperationresult.dwl"
+    },
+    "d37dd565-0162-4f41-ae08-57a5010f83ac": {
+      "payload": "sample_data/list_json.json"
+    }
+  }
+}

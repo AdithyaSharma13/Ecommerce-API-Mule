@@ -1,0 +1,18 @@
+http.port: "8081"
+  
+db:
+  host: "127.0.0.1"
+  port: "3306"
+  user: "root"
+  password: "Adi13202!"
+  
+sf:
+  username: "adi13@demo.com"
+  password: "Cloud2021"
+  securitytoken: "sRozej7B8mSlbl83AtBvzArF"
+  
+SMTP:
+  host: "smtp.gmail.com"
+  port: "587"
+  user: "adithyamittur.am.am@gmail.com"
+  password: "lbuyciqbyabsfscm"

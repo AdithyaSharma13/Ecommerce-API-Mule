@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="Create-users-sf-apiFlow" doc:id="2d30aa54-4cc3-4001-ac41-842635e82c49" >
+		<logger level="INFO" doc:name="Logger" doc:id="190ab1ba-1f61-4765-9b65-45afa5c2ec67" message="Create-users-sf-apiFlow has started"/>
+		<ee:transform doc:name="payload-java" doc:id="172d0705-a59c-4070-a9a5-2f99296eac9e" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload map ( payload01 , indexOfPayload01 ) -> {
+	LastName: payload01.Name,
+	MailingCity: payload01.City,
+	Phone: payload01.Phone,
+	Email: payload01.Email,
+	account_id__c: payload01.account_id
+}
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<salesforce:create type="Contact" doc:name="Create" doc:id="3252d9f4-a1b4-41fc-a400-bf8cc0795334" config-ref="Salesforce_Config"/>
+		<ee:transform doc:name="Response payload" doc:id="cac935ab-cbf9-4e18-a4ff-fcb9c10892fd" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  message: "Records created successfully"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="ea215fc1-daf8-4cb0-9873-dabfd9610a23" message="Create-users-sf-apiFlow has completed successfully"/>
+	</flow>
+	<flow name="Update-users-sf-apiFlow" doc:id="18b678da-108f-4b7a-af1b-7cc4dc05cd3b" >
+		<logger level="INFO" doc:name="Logger" doc:id="9da7b45f-2033-4599-a3cc-65d8e70460a1" message="Update-users-sf-apiFlow has started"/>
+		<ee:transform doc:name="payload-java" doc:id="d37dd565-0162-4f41-ae08-57a5010f83ac" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload map ( payload01 , indexOfPayload01 ) -> {
+	MailingCity: payload01.City default "",
+	Phone: payload01.Phone default "",
+	account_id__c: payload01.account_id
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<salesforce:upsert doc:name="Upsert" doc:id="18e0ac34-b7e6-4557-9cf1-5c8a066bbf65" objectType="Contact" externalIdFieldName="account_id__c" config-ref="Salesforce_Config"/>
+		<ee:transform doc:name="Response payload" doc:id="9a88e43f-275a-4bdf-baaa-97a764c8dc32" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  message: "Records updated successfully"
+}++
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="d4e27b59-a2f3-46e3-a11a-07e322c3230c" message="Update-users-sf-apiFlow has completed" />
+	</flow>
+	<flow name="Delete-users-sf-apiFlow" doc:id="91bea626-1fa0-4d67-b7a2-859058e8b428" >
+		<salesforce:query doc:name="Query" doc:id="621cce2d-4503-427b-882b-8efc43219744" config-ref="Salesforce_Config">
+			<salesforce:salesforce-query ><![CDATA[Select Id,account_id__c from Contact where account_id__c=':account_id']]></salesforce:salesforce-query>
+			<salesforce:parameters ><![CDATA[#[output application/java
+---
+{
+	account_id : attributes.queryParams.account_id
+}]]]></salesforce:parameters>
+		</salesforce:query>
+		<logger level="INFO" doc:name="Logger" doc:id="52045a19-9869-4d7e-9b82-b61b123bb675" message="#[payload]"/>
+		<ee:transform doc:name="Transform Message" doc:id="937e67ba-71f7-4878-9c08-47cb36dd5891" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload map{
+	Id:$.Id	
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<salesforce:delete doc:name="Delete" doc:id="1b0decf3-fd90-457f-bf5e-9724e1da6dd6" config-ref="Salesforce_Config">
+			<salesforce:ids ><![CDATA[#[payload.Id]]]></salesforce:ids>
+		</salesforce:delete>
+		<ee:transform doc:name="Response payload" doc:id="9a4dc51e-99d3-40bd-bc06-de8f37e075c1" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  message: "Record deleted successfully"
+}++
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="32e500dd-dbac-408e-9d44-be21ef513876" message="Delete-users-sf-apiFlow completed successfully"/>
+	</flow>
+</mule>

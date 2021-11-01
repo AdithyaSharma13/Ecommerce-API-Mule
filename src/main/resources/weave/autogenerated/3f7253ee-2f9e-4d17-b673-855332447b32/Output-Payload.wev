@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_3f7253ee_2f9e_4d17_b673_855332447b32_Output_Payload = Array<{|  account_id__c: String,   username?: String,   email?: String,   prodName?: String,   prodPrice?: Number|}>
+

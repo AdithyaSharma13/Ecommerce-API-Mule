@@ -1,0 +1,16 @@
+[
+{
+	"Name":"ABC",
+	"account_id":"A4",
+	"Phone":"9876543210",
+	"Email":"abc@gmail.com",
+	"City":"XYZ"
+},
+{
+	"Name":"DEF",
+	"account_id":"A5",
+	"Phone":"9876543287",
+	"Email":"DEF@gmail.com",
+	"City":"yyy"
+}
+]	

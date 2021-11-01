@@ -1,0 +1,10 @@
+{
+  "Orderid": "O4",
+  "product":[
+    {
+      "prodName":"TV",
+      "prodPrice":40000,
+      "prodQty":1
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_a11a352c_efb7_49f6_bc8c_783b6e7c51fc_Output_Payload = Array<{|  Orderid: String,   prodName?: String,   prodSupplier?: String,   prodQty?: Number,   prodPrice?: Number,   account_id__c?: String,   itemId: Number|}>
+

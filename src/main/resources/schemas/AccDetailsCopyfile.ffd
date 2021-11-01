@@ -1,0 +1,8 @@
+form: COPYBOOK
+id: 'ACCOUNT-DETAILS'
+values: 
+- { name: 'ACCOUNTID', type: String, length: 10 }
+- { name: 'NAME', type: String, length: 10 }
+- { name: 'PHONENUMBER', type: String, length: 10 }
+- { name: 'EMAIL', type: String, length: 20 }
+- { name: 'CITY', type: String, length: 10 }

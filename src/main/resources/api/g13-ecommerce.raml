@@ -1,0 +1,108 @@
+#%RAML 1.0
+title: G13-Ecommerce
+
+version: v1
+protocols: 
+- HTTP
+
+traits:
+  security: !include trait/security.raml
+
+/users:
+  is: [security]
+  post:
+    description: creates a user account
+    body:
+      application/json:
+        example: !include Input/inputUsers.raml
+    responses:
+      201:
+        body:
+          application/json:
+            example: !include Output/Data added.raml
+
+  /{accountId}:  
+    is: [security]   
+    put:
+      description: updated a user account
+      body:
+        application/json:
+          example: !include Input/updateUsers.raml
+
+      responses:
+        200:
+          body:
+            application/json:
+              example: !include Output/Data updated.raml
+    delete:
+      description: deletes a user account   
+      responses:
+        200:
+          body:
+            application/json:
+              example: !include Output/Data deleted.raml
+        
+/orders:
+  is: [security]
+  post:
+    description: creates an order
+    body:
+      application/json:
+        example: !include Input/inputOrders.raml
+    responses:
+      201:
+        body:
+          application/json:
+            example: !include Output/Data added.raml
+
+  /{orderid}:
+    get:
+      description: retrives order information
+      responses:
+        200:
+          body:
+            application/json:
+              example: !include /Input/inputOrders.raml
+
+    is: [security]
+    put:
+      description: updates a order
+      body:
+        application/json:
+          example: !include Input/inputOrders.raml
+
+      responses:
+        200:
+          body:
+            application/json:
+              example: !include Output/Data updated.raml
+
+/payment:
+  is: [security]  
+  post:
+    description: Mock API for payment
+    body:
+      application/json:
+        example: !include Input/inputPayment.raml
+          
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include Output/payment.raml
+
+/wishlist:
+  is: [security]
+  post:
+    description: wishlist a product
+    body:
+      application/json:
+        example: !include Input/inputWishlist.raml
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include Output/Data added.raml
+
+
+

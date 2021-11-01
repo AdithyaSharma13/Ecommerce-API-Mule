@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:s3="http://www.mulesoft.org/schema/mule/s3"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/s3 http://www.mulesoft.org/schema/mule/s3/current/mule-s3.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd">
+	<flow name="Create-Orders-apiFlow" doc:id="a2cab7b5-b87f-4e0d-b5ff-2e6b27b67eb7" >
+		<logger level="INFO" doc:name="Logger" doc:id="3550adb0-ff3d-4d1a-a195-8b2362dd1c71" message="Create-Orders-apiFlow"/>
+		<ee:transform doc:name="Variable-Orderid" doc:id="a98d89c7-76ec-4d9c-94cf-bd2f7a7e8e61" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="Orderid" ><![CDATA[%dw 2.0
+output application/json
+---
+payload.Orderid]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="create-Orders-Subflow-Accountid-flow" doc:id="b3006d92-79bc-4385-a936-a2aefeb2ec96" name="create-Orders-Subflow-Accountid-flow" target="Accountid" />
+		<choice doc:name="Choice" doc:id="3ff2bde9-ada0-4441-8625-fa47aa0da9bb" >
+			<when expression="#[! isEmpty(vars.Accountid)]">
+				<foreach doc:name="For Each" doc:id="59d63ca7-bc0f-4aac-ab3c-1f8f5beed7ee" collection="#[payload.product]">
+					<db:insert doc:name="Insert" doc:id="f1831f5e-5c60-47eb-8bed-9cccd372b9f5" config-ref="Database_Config">
+			<db:sql><![CDATA[insert into Orders (Orderid,prodName,prodPrice,prodQty) values (:Orderid,:prodName,:prodPrice,:prodQty)]]></db:sql>
+			<db:input-parameters><![CDATA[#[{
+	"Orderid":vars.Orderid,
+	"prodName":payload.prodName,
+	"prodPrice":payload.prodPrice,
+	"prodQty":payload.prodQty
+}]]]></db:input-parameters>
+		</db:insert>
+					<flow-ref doc:name="Invtable-Update-SubFlow" doc:id="29a700c2-e9ba-4055-b78a-4cdebd3d69e6" name="Invtable-Update-SubFlow" target="updateinv"/>
+				</foreach>
+				<logger level="INFO" doc:name="Logger" doc:id="54c77480-cd19-44c1-80d7-79ef7dfa460c" message="Orders created successfully"/>
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Logger" doc:id="1c073ba5-c5b7-45dd-9154-f29b59ae0851" message="Account is not registered with G13.Please create your account to place your order."/>
+				<raise-error doc:name="Raise error" doc:id="71fe1116-e50d-44f6-897b-5d1847018daa" description="Account is not registered with G13. Please create your account to place your order." type="INPUT:INVALID_USER"/>
+			</otherwise>
+		</choice>
+		<ee:transform doc:name="Response payload" doc:id="ac56b0f1-4a92-4a84-bb99-2c81e7bab5e1" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "message": "Records created successfully"
+}++
+payload
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="8d614010-4627-43b0-b71d-a18a12ea2292" message="flow ended" />
+		<error-handler>
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="cb96bba0-aff5-4bd1-a5ac-4c587951f8ec" type="DB:CONNECTIVITY">
+				<logger level="INFO" doc:name="Logger" doc:id="8c551b6f-e5cc-486b-b3d3-12b699a8ce13" message="Flow encontered an error"/>
+			</on-error-continue>
+		</error-handler>
+	</flow>
+	<sub-flow name="create-Orders-Subflow-Accountid-flow" doc:id="022d5909-4245-4738-896b-1d8f08429208" >
+		<logger level="INFO" doc:name="Logger" doc:id="5ace6b77-4e42-40d8-929a-0230afe79724" message="create-Orders-Subflow-Accountid-flow has started"/>
+		<salesforce:query doc:name="Query" doc:id="f9f5d939-a47c-436b-9236-79a0ccd1cb79" config-ref="Salesforce_Config">
+			<salesforce:salesforce-query><![CDATA[Select account_id__c from Contact where account_id__c=':account_id__c']]></salesforce:salesforce-query>
+			<salesforce:parameters><![CDATA[#[output application/java
+---
+{
+	account_id__c : attributes.queryParams.account_id
+}]]]></salesforce:parameters>
+		</salesforce:query>
+		<set-variable value="#[payload]" doc:name="accountdata" doc:id="538987d2-ebd4-48e5-afd4-cb4b4dcfd68d" variableName="accountdata"/>
+	</sub-flow>
+	<sub-flow name="Invtable-Update-SubFlow" doc:id="0ae32786-4235-40ec-b249-31e48fcd0786" >
+		<logger level="INFO" doc:name="Logger" doc:id="22c41e45-cb57-440e-9e0e-67db54719811" message="invtable update sub flow has started"/>
+		<db:update doc:name="Update" doc:id="ffe26a88-7e5a-4102-a2d6-751a7c5e93a1" config-ref="Database_Config">
+			<db:sql ><![CDATA[UPDATE invtable
+SET invtable.prodQty= invtable.prodQty - :prodQty
+WHERE invtable.prodName =:prodName]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	"prodName":payload.prodName,
+	"prodQty":payload.prodQty
+}]]]></db:input-parameters>
+		</db:update>
+		<logger level="INFO" doc:name="Logger" doc:id="99ca20fa-8cf3-4750-9027-ccc2227a6245" message="invtable update flow completed"/>
+	</sub-flow>
+	<flow name="GetOrders-api-flow" doc:id="a11a352c-efb7-49f6-bc8c-783b6e7c51fc" >
+		<db:select doc:name="Select" doc:id="4b305b76-6cea-4ef7-a236-777f22bd184f" config-ref="Database_Config">
+			<db:sql ><![CDATA[select * from orders where Orderid=:Orderid]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{ 
+	Orderid:vars.orderid 
+}]]]></db:input-parameters>
+		</db:select>
+		<ee:transform doc:name="Get-order payload" doc:id="01a2adcf-e0cb-4c3c-9806-58e5b83c16a6" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map{
+	Orderid: $.Orderid,
+	prodName: $.prodName default "",
+	prodPrice: $.prodPrice default 0,
+	prodQty: $.prodQty default 0
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="UpdateOrder-api-flow" doc:id="4820abfb-1fd5-4d85-bce2-d0a6b3ed464d" >
+		<logger level="INFO" doc:name="Logger" doc:id="a979cd71-dc19-438d-b9aa-23fdc2e3160c" message="Fetching the product quantity from the orders table"/>
+		<flow-ref doc:name="UpdateOrder-selectprodQtyOrders-subflow" doc:id="de742baa-e800-44b6-a364-d060c7152181" name="UpdateOrder-selectprodQtyOrders-subflow" target="productQTY"/>
+		<ee:transform doc:name="productQty-Variable" doc:id="dc543914-051b-4ed4-a447-fddf82b2753d" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="productQty" ><![CDATA[%dw 2.0
+output application/json
+---
+vars.productQTY]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="UpdateOrder-updateprodQtyOrders-subflow" doc:id="8684218d-9319-4e45-b62b-bb082a7bc646" name="UpdateOrder-updateprodQtyOrders-subflow" target="newProdQty"/>
+		<logger level="INFO" doc:name="Logger" doc:id="bd8097fa-894a-48ea-a4fd-0353edc792c6" message='Updating the product quantity in the invtable' />
+		<flow-ref doc:name="Invtable-Update-SubFlow" doc:id="bd8ca775-5ad4-44b5-b1e0-f50e9aacba17" name="Invtable-Update-SubFlow" target="prodQtyInv"/>
+		<ee:transform doc:name="Response payload" doc:id="3773d471-53be-4b62-91f0-33bb8139083d" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  message: "Records created successfully"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="6bdbf45d-c430-4be5-81aa-9aa4af5c09c0" message="UpdateOrder-api-flow completed successfully"/>
+	</flow>
+	<sub-flow name="UpdateOrder-selectprodQtyOrders-subflow" doc:id="b551af7a-6dd7-46be-9dcf-3b1969bf465e">
+		<db:select doc:name="Select" doc:id="ad0db11d-7977-4ade-bd12-823024ab5779" config-ref="Database_Config">
+			<db:sql><![CDATA[select prodQty from orders where Orderid=:Orderid and prodName=:prodName]]></db:sql>
+			<db:input-parameters><![CDATA[#[{
+	"Orderid":payload.Orderid,
+	"prodName":payload.prodName
+	
+}]]]></db:input-parameters>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="dde93f73-1613-423a-ad95-92284798a61a" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload[0].prodQty]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="b609bc76-7158-43e7-97c2-9f7670d9422a" message="UpdateOrder-selectprodQtyOrders-subflow completed"/>
+	</sub-flow>
+	<sub-flow name="UpdateOrder-updateprodQtyOrders-subflow" doc:id="02dbfef1-8259-4fbb-903f-5ed6a850c0ed" >
+		<logger level="INFO" doc:name="Logger" doc:id="29bf483e-d7c0-48dd-94d4-e47f9138d9b0" message="Updating the product quantity of the order in Orders table"/>
+		<db:update doc:name="Update" doc:id="d7022aee-26d6-4fa3-97a1-8d8761070259" config-ref="Database_Config">
+			<db:sql><![CDATA[UPDATE orders
+SET prodQty = (:prodQty + :productQty)
+WHERE Orderid= :Orderid and prodName= :prodName]]></db:sql>
+			<db:input-parameters><![CDATA[#[{
+	Orderid   : payload.Orderid,
+	prodName  : payload.prodName,
+	prodQty   : payload.prodQty,
+	productQty: vars.productQty
+}]]]></db:input-parameters>
+		</db:update>
+		<logger level="INFO" doc:name="Logger" doc:id="6dd31878-48e2-447c-9fae-73addf792e34" message="Updated the product quantity of the order in Orders table successfully"/>
+	</sub-flow>
+</mule>

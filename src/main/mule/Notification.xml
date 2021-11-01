@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:email="http://www.mulesoft.org/schema/mule/email" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd">
+	<flow name="NotificationMainFlow" doc:id="d8d853c6-ae80-4323-a005-2854e867272b">
+		<scheduler doc:name="Scheduler" doc:id="82aea650-5ee4-44eb-9ee5-2f4705bdeb73">
+			<scheduling-strategy>
+				<fixed-frequency frequency="1" timeUnit="MINUTES" />
+			</scheduling-strategy>
+		</scheduler>
+		<scatter-gather doc:name="Scatter-Gather" doc:id="e7022bf9-7237-4b01-9b52-c2803de5f9fe">
+			<route>
+				<flow-ref doc:name="PriceUpdateFlow" doc:id="e4755172-213a-4097-9ca4-a2dd28a59f44" name="PriceUpdateFlow" />
+			</route>
+			<route>
+				<flow-ref doc:name="StockUpdateFlow" doc:id="c2648df4-6ed4-4e0f-b749-5143ea0f71a2" name="StockUpdateFlow" />
+			</route>
+		</scatter-gather>
+		<logger level="INFO" doc:name="Logger" doc:id="1b4abec8-d01e-4206-986c-5178ffd5f40a" message="Notification flow completed successfully" />
+	</flow>
+	<flow name="PriceUpdateFlow" doc:id="3f7253ee-2f9e-4d17-b673-855332447b32" >
+		<logger level="INFO" doc:name="Logger" doc:id="aa2cd007-cad5-4384-9cfe-348c7c1638af" message="Notification flow for price update has started"/>
+		<db:select doc:name="Select" doc:id="7b0a21ff-1bfc-4bf1-bfd5-3ac290f6f0c5" config-ref="Database_Config">
+			<db:sql ><![CDATA[Select wishlist.* from wishlist,invtable where wishlist.prodName=invtable.prodName AND wishlist.prodPrice != invtable.prodPrice]]></db:sql>
+		</db:select>
+		<choice doc:name="Choice" doc:id="80597e1a-80f3-46c0-97ad-31ef9d22ba52" >
+			<when expression="#[! isEmpty(payload)]">
+				<foreach doc:name="For Each" doc:id="91c715d3-241d-4d27-8fa7-1a7f115bae8d" collection="#[payload]">
+					<email:send doc:name="Send" doc:id="056393dd-8e3d-4bbf-8875-5f753b88316a" fromAddress="adithyamittur.am.am@gmail.com" subject="G13:Wishlist Price Update" config-ref="Email_SMTP">
+					<email:to-addresses>
+						<email:to-address value="#[payload.email]" />
+					</email:to-addresses>
+					<email:body contentType="text/plain">
+						<email:content><![CDATA[#["Dear "++ payload.username as String ++","++"\n"++
+"The Price of "++ payload.prodName as String ++ " in your wishlist has changed."++"\n"++"\n"++"Regards,"++"\n"++"G3-Ecommerce"]]]></email:content>
+					</email:body>
+				</email:send>
+					<logger level="INFO" doc:name="Logger" doc:id="36b5e8b0-c515-4df6-85d7-06cbcafcf92a" message="Price update notification sent successfully to the user" />
+				</foreach>
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Logger" doc:id="1aebb359-477e-43fd-b6e1-00d642c2adf5" message="There is no change of price for the products in wishlist"/>
+			</otherwise>
+		</choice>
+		<ee:transform doc:name="Response payload" doc:id="73fe0343-8013-4934-bba0-0368cf358ea6" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="5d75ccc5-f6d5-4d26-b6f4-7f56b5390636" type="EMAIL:CONNECTIVITY, EMAIL:RETRY_EXHAUSTED, EMAIL:SEND">
+				<ee:transform doc:name="error response" doc:id="35370596-5cce-4a7a-9599-03a7fdef24d4" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+error.description]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-continue>
+		</error-handler>
+	</flow>
+	<flow name="StockUpdateFlow" doc:id="dcdce681-451e-4a0c-9f21-8ea459766dee" >
+		<logger level="INFO" doc:name="Logger" doc:id="bf69d0ee-c9b7-4dc4-a7ad-47a96f9ea57c" message="Notification flow for stock update has started"/>
+		<db:select doc:name="Select" doc:id="a0a508f0-ac07-4dfa-8445-21addcb08471" config-ref="Database_Config">
+			<db:sql ><![CDATA[Select wishlist.* from wishlist,invtable where wishlist.prodName=invtable.prodName AND wishlist.prodQty > invtable.prodQty]]></db:sql>
+		</db:select>
+		<choice doc:name="Choice" doc:id="0e1ac4f4-0b13-4118-9bb1-e221e787482a" >
+			<when expression="#[! isEmpty(payload)]">
+				<foreach doc:name="For Each" doc:id="33a556bb-0703-4fb3-bc18-7cd209a9c5b6" >
+					<email:send doc:name="Send" doc:id="150e8257-7f78-480c-b10d-29e82842e997" fromAddress="adithyamittur.am.am@gmail.com" subject="G13:Wishlist Stock Update" config-ref="Email_SMTP">
+						<email:to-addresses >
+							<email:to-address value="#[payload.email]" />
+						</email:to-addresses>
+						<email:body contentType="text/plain">
+							<email:content ><![CDATA[#["Dear "++ payload.username as String ++","++"\n"++
+"The Availability of "++ payload.prodName as String ++ " in your wishlist has changed."++"\n"++"\n"++"Regards,"++"\n"++"G3-Ecommerce"]]]></email:content>
+						</email:body>
+					</email:send>
+					<logger level="INFO" doc:name="Logger" doc:id="60df8880-9054-4ffe-8e48-b81486fd039b" message="Stock update notification sent successfully to the user"/>
+				</foreach>
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Logger" doc:id="50108976-d484-4d79-9f2a-d7691578763c" message="There is no change in stocks for the products in wishlist"/>
+			</otherwise>
+		</choice>
+		<ee:transform doc:name="Response payload" doc:id="e18cb475-0454-4e52-97d0-da327da1e880" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="352b8558-237a-4d53-a7c0-77834846323e" type="EMAIL:CONNECTIVITY, EMAIL:RETRY_EXHAUSTED, EMAIL:SEND">
+				<ee:transform doc:name="error response" doc:id="a9956350-c07f-46d9-8415-327a4cce3a4f" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+error.description]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-continue>
+		</error-handler>
+	</flow>
+</mule>

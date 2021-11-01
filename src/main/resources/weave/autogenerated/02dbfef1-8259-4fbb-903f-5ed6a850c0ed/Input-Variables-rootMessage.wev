@@ -1,0 +1,32 @@
+%dw 2.0
+
+type auto_02dbfef1_8259_4fbb_903f_5ed6a850c0ed_Input_Variables_rootMessage = {|
+  payload: {|
+    orderId?: String, 
+    items?: Array<{|      itemName?: String,       price?: Number {"typeId": "int"},       quantity?: Number {"typeId": "int"}    |}>
+  |} {"example": "{\\\"orderId\\\":\\\"123456\\\",\\\"items\\\":[{\\\"itemName\\\":\\\"abc\\\",\\\"price\\\":1000,\\\"quantity\\\":1},{\\\"itemName\\\":\\\"xyz\\\",\\\"price\\\":1922,\\\"quantity\\\":3}]}"}, 
+  attributes: {|
+    clientCertificate?: {|
+      publicKey?: {|  |}, 
+      "type"?: String, 
+      encoded?: Binary
+    |}, 
+    headers: {|
+      client_id: String, 
+      client_secret: String
+    |}, 
+    listenerPath: String, 
+    method: String, 
+    queryParams: {|  |}, 
+    queryString: String, 
+    relativePath: String, 
+    remoteAddress: String, 
+    requestPath: String, 
+    requestUri: String, 
+    scheme: String, 
+    uriParams: {|  |}, 
+    version: String, 
+    localAddress: String
+  |}
+|} {"typeId": "org.mule.runtime.api.message.Message"}
+
